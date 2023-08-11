@@ -14,13 +14,32 @@ table {
   max-width: 50%;
   max-height: 80%;
   min-width: 20em;
+  background-color: beige;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 table, th, td {
-  border: 1px black solid;
-  background-color: beige;
+ border: 1px solid;
 }
 
 td, th {
   padding: 0.5em;
+}
+
+#search-container {
+  max-width: 50%;
+  max-height: 80%;
+  min-width: 50em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: solid 1px #aaa;
+}
+
+input {
+  min-width: 40em;
+  margin: 0.5em 0.5em;
+  align-items: center;
+  justify-content: center;
+  align-content: stretch;
 }

@@ -1,119 +1,41 @@
-import repos from "/data/repos.js";
+import { repos } from "./data/repos.js";
 
 // global `options` objects that stores options
 // chosen by the user of the web-page.
 const options = {
-  filterby: null,
-  sortBy: {
-      field: null,
-      direction: "asc" // "asc" | "desc"
-  },
-  recordsOnPage: 10
+    filterby: null,
+    sortBy: {
+        field: "name",
+        direction: "asc" // "asc" | "desc"
+    },
+    recordsOnPage: 10
 };
 
-export default function buildPage() {
+function buildPage() {
     const root = document.querySelector("div#root");
-    const table = buildTable(repos);
-    root.appendChild(table);
-
-}
-
-function buildTable(data) {
-  // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
-
-  const table = document.createElement("table");
-
- 
-  const header = document.createElement("thead");
-
-  const haderRow = document.createElement("tr");
-
-  const headerName = document.createElement("th");
-  const headerDescription = document.createElement("th");
-  const headerLink = document.createElement("th");
-  const headerUpdated = document.createElement("th");
-
-  headerName.innerText = "Name";
-  headerDescription.innerText = "Desciption";
-  headerLink.innerText = "Link";
-  headerUpdated.innerText = "Updated At";
-
-  table.appendChild(header);
-  header.appendChild(haderRow);
-  haderRow.appendChild(headerName);
-  haderRow.appendChild(headerDescription);
-  haderRow.appendChild(headerLink);
-  haderRow.appendChild(headerUpdated);
-  
-  const tbody = document.createElement("tbody");
-  table.appendChild(tbody);
-
-
-  data.forEach((repo) => {
-    const row = document.createElement("tr");
     
-    const nameCell = document.createElement("td");
-    nameCell.innerText = repo.name;
+    const table = createTable(repos);
+    const searchBar = createSearchComponent();
 
-    const descriptionCell = document.createElement("td");
-    descriptionCell.innerText = repo.description;
-
-    const linkCell = document.createElement("td");
-    const link = document.createElement("a");
-    link.href = repo.html_url;
-    link.innerText = repo.html_url;
-    linkCell.appendChild(link);
-
-    const updatedAt = document.createElement("td");
-    updatedAt.innerText = repo.updated_at;
-
-    row.appendChild(nameCell);
-    row.appendChild(descriptionCell);
-    row.appendChild(linkCell);
-    row.appendChild(updatedAt);
-
-    tbody.appendChild(row);
-  });
-
-  return table;
-};
-
-
-
-function buildSearchBar() {
-  const searchBarDiv = document.createElement("div");
-
-  const inputField = document.createElement("input");
-  inputField.type = "text";
-  inputField.placeholder = "Enter your search query";
-
-  const searchButton = document.createElement("button");
-  searchButton.textContent = "Search";
-
-  searchBarDiv.appendChild(inputField);
-  searchBarDiv.appendChild(searchButton);
-
-  inputField.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-      search(inputField.value);
-    }
-  });
-
-  searchButton.addEventListener("click", function() {
-    search(inputField.value);
-  });
-
-  return searchBarDiv;
-};
-
+    root.append(searchBar, table);
+}
 
 function search(searchTerm) {
-  // implement search functionality
-  // and use this function in event handlers
-  // for input and button elements in Search Component.
+    
+    if (searchTerm === "") {
+        alert("Please give me searching criteria!");
+        return;
+    }
+
+    options.filterby = searchTerm;
+
+    const trows = convertReposToTableRows(repos)
+    const tbody = document.querySelector("table > tbody");
+    tbody.replaceChildren(...trows);
+    
 }
 
-function sort(field, direction) {
+function sort({field, direction}) {
     // implement sort functionality
     // and use this function in event handlers
     // for input and button elements in Sorting Component.
@@ -125,5 +47,113 @@ function setPagination(recordsOnPage) {
     // for Pagination Component
 }
 
-export {buildPage, sort, search, setPagination};
 
+function convertReposToTableRows(repos) {
+
+    const filteredRepos = options.filterby == null ? [...repos] :
+        repos.filter(({name, description}) => 
+                name.includes(options.filterby || 
+                    (description != null && description.includes(options.filterby))
+        ));
+
+    if (options.sortBy.field != null) {
+        filteredRepos.sort((repo1, repo2) => {
+            let a = null;
+            let b = null;
+
+            if (options.sortBy.field === "name") {                
+                a = repo1.name;
+                b = repo2.name;
+            }
+
+            if (options.sortBy.field === "updated_at") {
+                a = new Date(repo1.updated_at);
+                b = new Date(repo2.updated_at);
+            }
+
+            if (a > b) {
+                return 1;
+            };
+
+            if (a < b) {
+                return -1;
+            };
+
+            return 0;
+
+        });
+    }
+    
+    return filteredRepos
+        .map( ({name, updated_at, description, html_url}) => {
+            const tr = document.createElement("tr");
+            
+            const tdName = document.createElement("td");
+            tdName.innerText = name;
+
+            const tdDescription = document.createElement("td");
+            tdDescription.innerText = description;
+
+            const tdUrl = document.createElement("td");
+            const a = document.createElement("a");
+            a.href = html_url;
+            a.innerText = html_url;
+            tdUrl.appendChild(a);
+                                    
+            const tdUpdatedAt = document.createElement("td");
+            tdUpdatedAt.innerText = updated_at;
+
+            tr.append(tdName, tdDescription, tdUrl, tdUpdatedAt);
+            
+            return tr;
+        });
+}
+
+function createTable(data) {
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const tbody = document.createElement("tbody");
+   
+    table.append(thead, tbody);
+    
+    const headers = ["Name", "Description", "Link", "Updated At"]
+        .map(header => {
+            const th = document.createElement("th");
+            th.innerText = header;
+            return th;
+        });
+
+    thead.append(...headers);
+    const trows = convertReposToTableRows(data);
+    
+
+    tbody.append(...trows);
+    return table;
+}
+
+function createSearchComponent() {
+    const div = document.createElement("div");
+    const input = document.createElement("input");
+    const button = document.createElement("button");
+
+    div.append(input, button);
+
+    input.placeholder = "Type search parameter here";
+    button.innerText = "Search";
+
+    input.addEventListener("keyup", (event) => {
+        if (event.key === "Enter") {
+            search(event.target.value);
+        }
+    });
+
+    button.addEventListener("click", event => {
+        search(input.value);
+    });
+    
+    return div;
+}
+
+
+
+export {buildPage};

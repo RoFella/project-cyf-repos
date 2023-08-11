@@ -3430,4 +3430,4 @@ const repos = [
     }
 ];
 
-export default repos;
+export { repos };
